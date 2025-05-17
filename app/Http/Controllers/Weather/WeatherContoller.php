@@ -3,56 +3,66 @@
 namespace App\Http\Controllers\Weather;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Favorite;
 use App\Models\SearchHistory;
 use App\Service\WeatherService;
 use Illuminate\Http\Request;
 
-
 class WeatherContoller extends Controller
 {
-    // agregar service 
     private $weatherService;
 
     public function __construct(WeatherService $weatherService)
     {
         $this->weatherService = $weatherService;
     }
+
     /**
      * @OA\Get(
      *     path="/api/weather/current",
+     *     operationId="getCurrentWeather",
      *     summary="Obtener el clima actual de una ciudad",
      *     tags={"Weather"},
      *     security={{"sanctum":{}}},
-     *     @OA\RequestBody(
+     *     @OA\Parameter(
+     *         name="city",
+     *         in="query",
      *         required=true,
-     *         @OA\JsonContent(
-     *             required={"city"},
-     *             @OA\Property(property="city", type="string", example="Madrid"),
-     *             @OA\Property(property="lang", type="string", example="es")
-     *         )
+     *         @OA\Schema(type="string", example="London"),
+     *         description="Nombre de la ciudad para la cual se desea obtener el clima actual."
+     *     ),
+     *     @OA\Parameter(
+     *         name="lang",
+     *         in="query",
+     *         required=false,
+     *         @OA\Schema(type="string", example="es"),
+     *         description="Código del idioma para la respuesta (opcional)."
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Respuesta exitosa",
+     *         description="Clima actual obtenido exitosamente.",
      *         @OA\JsonContent(
-     *             @OA\Property(property="temperature", type="number", example=22.5),
-     *             @OA\Property(property="condition", type="string", example="Soleado"),
-     *             @OA\Property(property="wind_kph", type="number", example=10.5),
-     *             @OA\Property(property="humidity", type="integer", example=60),
-     *             @OA\Property(property="local_time", type="string", example="2025-05-17 12:00")
+     *             type="object",
+     *             @OA\Property(property="temperature", type="number", format="float", example=22.5, description="Temperatura actual en grados Celsius."),
+     *             @OA\Property(property="condition", type="string", example="Soleado", description="Descripción textual de la condición climática."),
+     *             @OA\Property(property="wind_kph", type="number", format="float", example=10.5, description="Velocidad del viento en kilómetros por hora."),
+     *             @OA\Property(property="humidity", type="integer", example=60, description="Porcentaje de humedad."),
+     *             @OA\Property(property="local_time", type="string", example="2025-05-17 15:00", description="Hora local de la ciudad.")
      *         )
      *     ),
      *     @OA\Response(
+     *         response=400,
+     *         description="Solicitud inválida."
+     *     ),
+     *     @OA\Response(
      *         response=500,
-     *         description="Error al obtener el clima"
+     *         description="Error interno del servidor al obtener el clima."
      *     )
      * )
      */
     public function current(Request $request)
     {
-        $data = $request->validate(['city' => 'required|string', 'lang' => 'string']);
+        $data = $request->validate(['city' => 'required|string', 'lang' => 'nullable|string']);
         try {
             $weather = $this->weatherService->getCurrentWeather($data['city'], $data['lang'] ?? '');
             SearchHistory::create([
@@ -73,20 +83,36 @@ class WeatherContoller extends Controller
             ], 500);
         }
     }
+
     /**
      * @OA\Get(
      *     path="/api/weather/history",
-     *     summary="Obtener el historial de búsquedas del usuario",
+     *     operationId="getSearchHistory",
+     *     summary="Obtener el historial de las últimas 10 búsquedas del usuario autenticado.",
      *     tags={"Weather"},
      *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
-     *         description="Historial de búsquedas",
-     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/SearchHistory"))
+     *         description="Historial de búsquedas obtenido exitosamente.",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="user_id", type="integer", example=1),
+     *                 @OA\Property(property="city", type="string", example="London"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-05-17T14:00:00.000000Z"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-05-17T14:00:00.000000Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autorizado."
      *     ),
      *     @OA\Response(
      *         response=500,
-     *         description="Error al obtener el historial"
+     *         description="Error interno del servidor al obtener el historial."
      *     )
      * )
      */
@@ -108,27 +134,44 @@ class WeatherContoller extends Controller
             ], 500);
         }
     }
+
     /**
      * @OA\Post(
      *     path="/api/weather/favorite",
-     *     summary="Agregar una ciudad a favoritos",
+     *     operationId="addCityToFavorites",
+     *     summary="Agregar una ciudad a la lista de favoritos del usuario.",
      *     tags={"Weather"},
      *     security={{"sanctum":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"city"},
-     *             @OA\Property(property="city", type="string", example="Madrid")
+     *             @OA\Property(property="city", type="string", example="Paris", description="Nombre de la ciudad a agregar a favoritos.")
      *         )
      *     ),
      *     @OA\Response(
      *         response=201,
-     *         description="Favorito agregado",
-     *         @OA\JsonContent(ref="#/components/schemas/Favorite")
+     *         description="Ciudad agregada a favoritos exitosamente.",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="id", type="integer", example=1),
+     *             @OA\Property(property="user_id", type="integer", example=1),
+     *             @OA\Property(property="city", type="string", example="Paris"),
+     *             @OA\Property(property="created_at", type="string", format="date-time", example="2025-05-17T14:00:00.000000Z"),
+     *             @OA\Property(property="updated_at", type="string", format="date-time", example="2025-05-17T14:00:00.000000Z")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=409,
+     *         description="La ciudad ya existe en la lista de favoritos."
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Error de validación de la solicitud."
      *     ),
      *     @OA\Response(
      *         response=500,
-     *         description="Error al agregar favorito"
+     *         description="Error interno del servidor al agregar a favoritos."
      *     )
      * )
      */
@@ -157,20 +200,36 @@ class WeatherContoller extends Controller
             ], 500);
         }
     }
+
     /**
      * @OA\Get(
      *     path="/api/weather/favorites",
-     *     summary="Obtener las ciudades favoritas del usuario",
+     *     operationId="getUserFavorites",
+     *     summary="Obtener la lista de ciudades favoritas del usuario autenticado.",
      *     tags={"Weather"},
      *     security={{"sanctum":{}}},
      *     @OA\Response(
      *         response=200,
-     *         description="Lista de favoritos",
-     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Favorite"))
+     *         description="Lista de favoritos obtenida exitosamente.",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="user_id", type="integer", example=1),
+     *                 @OA\Property(property="city", type="string", example="Paris"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-05-17T14:00:00.000000Z"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-05-17T14:00:00.000000Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="No autorizado."
      *     ),
      *     @OA\Response(
      *         response=500,
-     *         description="Error al obtener favoritos"
+     *         description="Error interno del servidor al obtener los favoritos."
      *     )
      * )
      */

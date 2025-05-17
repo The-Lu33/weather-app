@@ -2,12 +2,22 @@
     "openapi": "3.0.0",
     "info": {
         "title": "Weather API",
-        "description": "Documentación de la API del clima",
+        "description": "API para obtener información del clima actual, historial de búsquedas y gestionar ciudades favoritas.",
         "contact": {
-            "email": ""
+            "email": "tu_email@example.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
         },
         "version": "1.0.0"
     },
+    "servers": [
+        {
+            "url": "/api",
+            "description": "Servidor API principal"
+        }
+    ],
     "paths": {
         "/api/auth/register": {
             "post": {
@@ -15,7 +25,7 @@
                     "Auth"
                 ],
                 "summary": "Registrar un nuevo usuario",
-                "operationId": "da8643013c2941f5ed7f8a9c9b4a7f7a",
+                "operationId": "register",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -34,14 +44,19 @@
                                     },
                                     "email": {
                                         "type": "string",
+                                        "format": "email",
                                         "example": "juan@email.com"
                                     },
                                     "password": {
+                                        "description": "Mínimo 8 caracteres",
                                         "type": "string",
+                                        "format": "password",
                                         "example": "12345678"
                                     },
                                     "password_confirmation": {
+                                        "description": "Debe coincidir con la contraseña",
                                         "type": "string",
+                                        "format": "password",
                                         "example": "12345678"
                                     }
                                 },
@@ -52,13 +67,17 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Usuario registrado",
+                        "description": "Usuario registrado exitosamente",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
                                         "access_token": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
                                         },
                                         "token_type": {
                                             "type": "string",
@@ -71,7 +90,45 @@
                         }
                     },
                     "422": {
-                        "description": "Datos inválidos"
+                        "description": "Error de validación de los datos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Los datos proporcionados no son válidos."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "additionalProperties": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "El correo electrónico ya está registrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Usuario ya registrado."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -81,8 +138,8 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Iniciar sesión",
-                "operationId": "535ffeda4b78916efd658b2844ea897a",
+                "summary": "Iniciar sesión de usuario",
+                "operationId": "login",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -95,10 +152,12 @@
                                 "properties": {
                                     "email": {
                                         "type": "string",
+                                        "format": "email",
                                         "example": "juan@email.com"
                                     },
                                     "password": {
                                         "type": "string",
+                                        "format": "password",
                                         "example": "12345678"
                                     }
                                 },
@@ -109,13 +168,17 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Login exitoso",
+                        "description": "Inicio de sesión exitoso",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
                                         "access_token": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
                                         },
                                         "token_type": {
                                             "type": "string",
@@ -128,7 +191,20 @@
                         }
                     },
                     "401": {
-                        "description": "Credenciales inválidas"
+                        "description": "Credenciales inválidas",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Credenciales inválidas"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -138,11 +214,11 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Cerrar sesión (revocar tokens)",
-                "operationId": "46f8a14c8083abb69eed72768aa08629",
+                "summary": "Cerrar sesión (revocar todos los tokens del usuario)",
+                "operationId": "logout",
                 "responses": {
                     "200": {
-                        "description": "Tokens revocados",
+                        "description": "Cierre de sesión exitoso",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -156,6 +232,9 @@
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "description": "No autorizado"
                     }
                 },
                 "security": [
@@ -170,11 +249,11 @@
                 "tags": [
                     "Auth"
                 ],
-                "summary": "Obtener información del usuario autenticado",
-                "operationId": "34648c4883052647b778f3e9d8ac67b9",
+                "summary": "Obtener la información del usuario autenticado",
+                "operationId": "getUser",
                 "responses": {
                     "200": {
-                        "description": "Usuario autenticado",
+                        "description": "Información del usuario autenticado",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -182,6 +261,9 @@
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "description": "No autorizado"
                     }
                 },
                 "security": [
@@ -197,56 +279,62 @@
                     "Weather"
                 ],
                 "summary": "Obtener el clima actual de una ciudad",
-                "operationId": "27b0afe613015822bd131c6ddaed2606",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "city"
-                                ],
-                                "properties": {
-                                    "city": {
-                                        "type": "string",
-                                        "example": "Madrid"
-                                    },
-                                    "lang": {
-                                        "type": "string",
-                                        "example": "es"
-                                    }
-                                },
-                                "type": "object"
-                            }
+                "operationId": "getCurrentWeather",
+                "parameters": [
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "description": "Nombre de la ciudad para la cual se desea obtener el clima actual.",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "London"
+                        }
+                    },
+                    {
+                        "name": "lang",
+                        "in": "query",
+                        "description": "Código del idioma para la respuesta (opcional).",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "es"
                         }
                     }
-                },
+                ],
                 "responses": {
                     "200": {
-                        "description": "Respuesta exitosa",
+                        "description": "Clima actual obtenido exitosamente.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "temperature": {
+                                            "description": "Temperatura actual en grados Celsius.",
                                             "type": "number",
+                                            "format": "float",
                                             "example": 22.5
                                         },
                                         "condition": {
+                                            "description": "Descripción textual de la condición climática.",
                                             "type": "string",
                                             "example": "Soleado"
                                         },
                                         "wind_kph": {
+                                            "description": "Velocidad del viento en kilómetros por hora.",
                                             "type": "number",
+                                            "format": "float",
                                             "example": 10.5
                                         },
                                         "humidity": {
+                                            "description": "Porcentaje de humedad.",
                                             "type": "integer",
                                             "example": 60
                                         },
                                         "local_time": {
+                                            "description": "Hora local de la ciudad.",
                                             "type": "string",
-                                            "example": "2025-05-17 12:00"
+                                            "example": "2025-05-17 15:00"
                                         }
                                     },
                                     "type": "object"
@@ -254,8 +342,11 @@
                             }
                         }
                     },
+                    "400": {
+                        "description": "Solicitud inválida."
+                    },
                     "500": {
-                        "description": "Error al obtener el clima"
+                        "description": "Error interno del servidor al obtener el clima."
                     }
                 },
                 "security": [
@@ -270,24 +361,51 @@
                 "tags": [
                     "Weather"
                 ],
-                "summary": "Obtener el historial de búsquedas del usuario",
-                "operationId": "5fae65558b2a1ed1be4a893563f16790",
+                "summary": "Obtener el historial de las últimas 10 búsquedas del usuario autenticado.",
+                "operationId": "getSearchHistory",
                 "responses": {
                     "200": {
-                        "description": "Historial de búsquedas",
+                        "description": "Historial de búsquedas obtenido exitosamente.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/components/schemas/SearchHistory"
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "user_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "London"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-05-17T14:00:00.000000Z"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-05-17T14:00:00.000000Z"
+                                            }
+                                        },
+                                        "type": "object"
                                     }
                                 }
                             }
                         }
                     },
+                    "401": {
+                        "description": "No autorizado."
+                    },
                     "500": {
-                        "description": "Error al obtener el historial"
+                        "description": "Error interno del servidor al obtener el historial."
                     }
                 },
                 "security": [
@@ -302,8 +420,8 @@
                 "tags": [
                     "Weather"
                 ],
-                "summary": "Agregar una ciudad a favoritos",
-                "operationId": "04b3451a1df3a5269361886186a4da06",
+                "summary": "Agregar una ciudad a la lista de favoritos del usuario.",
+                "operationId": "addCityToFavorites",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -314,8 +432,9 @@
                                 ],
                                 "properties": {
                                     "city": {
+                                        "description": "Nombre de la ciudad a agregar a favoritos.",
                                         "type": "string",
-                                        "example": "Madrid"
+                                        "example": "Paris"
                                     }
                                 },
                                 "type": "object"
@@ -325,17 +444,47 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Favorito agregado",
+                        "description": "Ciudad agregada a favoritos exitosamente.",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/Favorite"
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "user_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "city": {
+                                            "type": "string",
+                                            "example": "Paris"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-05-17T14:00:00.000000Z"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-05-17T14:00:00.000000Z"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
                     },
+                    "409": {
+                        "description": "La ciudad ya existe en la lista de favoritos."
+                    },
+                    "422": {
+                        "description": "Error de validación de la solicitud."
+                    },
                     "500": {
-                        "description": "Error al agregar favorito"
+                        "description": "Error interno del servidor al agregar a favoritos."
                     }
                 },
                 "security": [
@@ -350,24 +499,51 @@
                 "tags": [
                     "Weather"
                 ],
-                "summary": "Obtener las ciudades favoritas del usuario",
-                "operationId": "f0f1add413439fb57b0590e7c9017a9e",
+                "summary": "Obtener la lista de ciudades favoritas del usuario autenticado.",
+                "operationId": "getUserFavorites",
                 "responses": {
                     "200": {
-                        "description": "Lista de favoritos",
+                        "description": "Lista de favoritos obtenida exitosamente.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "array",
                                     "items": {
-                                        "$ref": "#/components/schemas/Favorite"
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "user_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Paris"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-05-17T14:00:00.000000Z"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-05-17T14:00:00.000000Z"
+                                            }
+                                        },
+                                        "type": "object"
                                     }
                                 }
                             }
                         }
                     },
+                    "401": {
+                        "description": "No autorizado."
+                    },
                     "500": {
-                        "description": "Error al obtener favoritos"
+                        "description": "Error interno del servidor al obtener los favoritos."
                     }
                 },
                 "security": [
@@ -382,84 +558,103 @@
         "schemas": {
             "User": {
                 "title": "Usuario",
+                "description": "Representa la información de un usuario autenticado.",
                 "properties": {
                     "id": {
+                        "description": "ID único del usuario.",
                         "type": "integer",
                         "example": 1
                     },
                     "name": {
+                        "description": "Nombre completo del usuario.",
                         "type": "string",
                         "example": "Juan Pérez"
                     },
                     "email": {
+                        "description": "Correo electrónico del usuario.",
                         "type": "string",
+                        "format": "email",
                         "example": "juan@email.com"
                     },
                     "created_at": {
+                        "description": "Fecha y hora de creación del usuario.",
                         "type": "string",
                         "format": "date-time",
-                        "example": "2025-05-17T12:00:00Z"
+                        "example": "2025-05-17T12:00:00.000000Z"
                     },
                     "updated_at": {
+                        "description": "Fecha y hora de última actualización del usuario.",
                         "type": "string",
                         "format": "date-time",
-                        "example": "2025-05-17T12:00:00Z"
+                        "example": "2025-05-17T12:00:00.000000Z"
                     }
                 },
                 "type": "object"
             },
             "SearchHistory": {
                 "title": "Historial de búsqueda",
+                "description": "Representa una búsqueda de clima realizada por un usuario.",
                 "properties": {
                     "id": {
+                        "description": "ID único del registro de búsqueda.",
                         "type": "integer",
                         "example": 1
                     },
                     "user_id": {
+                        "description": "ID del usuario que realizó la búsqueda.",
                         "type": "integer",
                         "example": 2
                     },
                     "city": {
+                        "description": "Nombre de la ciudad buscada.",
                         "type": "string",
                         "example": "Madrid"
                     },
                     "created_at": {
+                        "description": "Fecha y hora en que se realizó la búsqueda.",
                         "type": "string",
                         "format": "date-time",
-                        "example": "2025-05-17T12:00:00Z"
+                        "example": "2025-05-17T12:00:00.000000Z"
                     },
                     "updated_at": {
+                        "description": "Fecha y hora de última actualización del registro.",
                         "type": "string",
                         "format": "date-time",
-                        "example": "2025-05-17T12:00:00Z"
+                        "example": "2025-05-17T12:00:00.000000Z"
                     }
                 },
                 "type": "object"
             },
             "Favorite": {
-                "title": "Favorito",
+                "title": "Ciudad favorita",
+                "description": "Representa una ciudad marcada como favorita por un usuario.",
                 "properties": {
                     "id": {
+                        "description": "ID único del registro de favorito.",
                         "type": "integer",
                         "example": 1
                     },
                     "user_id": {
+                        "description": "ID del usuario que agregó la ciudad a favoritos.",
                         "type": "integer",
                         "example": 2
                     },
                     "city": {
+                        "description": "Nombre de la ciudad favorita.",
                         "type": "string",
                         "example": "Madrid"
                     },
                     "created_at": {
+                        "description": "Fecha y hora en que se agregó la ciudad a favoritos.",
                         "type": "string",
                         "format": "date-time",
-                        "example": "2025-05-17T12:00:00Z"
+                        "example": "2025-05-17T12:00:00.000000Z"
                     },
                     "updated_at": {
+                        "description": "Fecha y hora de última actualización del registro.",
                         "type": "string",
                         "format": "date-time",
-                        "example": "2025-05-17T12:00:00Z"
+                        "example": "2025-05-17T12:00:00.000000Z"
                     }
                 },
                 "type": "object"
@@ -468,6 +663,7 @@
         "securitySchemes": {
             "sanctum": {
                 "type": "http",
+                "description": "Token de autenticación Bearer",
                 "bearerFormat": "JWT",
                 "scheme": "bearer"
             }

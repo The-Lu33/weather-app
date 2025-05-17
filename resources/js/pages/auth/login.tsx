@@ -1,14 +1,6 @@
-import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import { FormEventHandler } from 'react';
-
-import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+import { LoginForm } from '@/components/auth/login-form';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { CloudSun } from 'lucide-react';
 
 type LoginForm = {
     email: string;
@@ -16,95 +8,47 @@ type LoginForm = {
     remember: boolean;
 };
 
-interface LoginProps {
-    status?: string;
-    canResetPassword: boolean;
-}
 
-export default function Login({ status, canResetPassword }: LoginProps) {
-    const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
-        email: '',
-        password: '',
-        remember: false,
-    });
-
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-        post(route('login'), {
-            onFinish: () => reset('password'),
-        });
-    };
+export default function Login() {
+  
 
     return (
-        <AuthLayout title="Log in to your account" description="Enter your email and password below to log in">
-            <Head title="Log in" />
+        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-sky-100 to-blue-50 p-4">
+            <a href="/" className="text-primary absolute top-4 left-4 flex items-center gap-2 hover:underline md:top-8 md:left-8">
+                <CloudSun className="h-5 w-5" />
+                <span>Volver al inicio</span>
+            </a>
 
-            <form className="flex flex-col gap-6" onSubmit={submit}>
-                <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Email address</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            required
-                            autoFocus
-                            tabIndex={1}
-                            autoComplete="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                            placeholder="email@example.com"
-                        />
-                        <InputError message={errors.email} />
+            <Card className="w-full max-w-md">
+                <CardHeader className="space-y-1 text-center">
+                    <div className="flex justify-center">
+                        <CloudSun className="text-primary h-10 w-10" />
                     </div>
-
-                    <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                            {canResetPassword && (
-                                <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
-                                    Forgot password?
-                                </TextLink>
-                            )}
-                        </div>
-                        <Input
-                            id="password"
-                            type="password"
-                            required
-                            tabIndex={2}
-                            autoComplete="current-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
-                        <InputError message={errors.password} />
+                    <CardTitle className="text-2xl">Bienvenido de nuevo</CardTitle>
+                    <CardDescription>Inicia sesión en tu cuenta para acceder a tu información del clima</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <LoginForm />
+                </CardContent>
+                <CardFooter className="flex flex-col space-y-4">
+                    <div className="text-muted-foreground text-center text-sm">
+                        ¿No tienes una cuenta?{' '}
+                        <a href="/auth/register" className="text-primary hover:text-primary/80 underline">
+                            Regístrate
+                        </a>
                     </div>
-
-                    <div className="flex items-center space-x-3">
-                        <Checkbox
-                            id="remember"
-                            name="remember"
-                            checked={data.remember}
-                            onClick={() => setData('remember', !data.remember)}
-                            tabIndex={3}
-                        />
-                        <Label htmlFor="remember">Remember me</Label>
+                    <div className="text-muted-foreground text-center text-xs">
+                        Al iniciar sesión, aceptas nuestros{' '}
+                        <a href="#" className="hover:text-muted-foreground/80 underline">
+                            Términos de servicio
+                        </a>{' '}
+                        y{' '}
+                        <a href="#" className="hover:text-muted-foreground/80 underline">
+                            Política de privacidad
+                        </a>
                     </div>
-
-                    <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
-                        Log in
-                    </Button>
-                </div>
-
-                <div className="text-muted-foreground text-center text-sm">
-                    Don't have an account?{' '}
-                    <TextLink href={route('register')} tabIndex={5}>
-                        Sign up
-                    </TextLink>
-                </div>
-            </form>
-
-            {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
-        </AuthLayout>
+                </CardFooter>
+            </Card>
+        </div>
     );
 }
