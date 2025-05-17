@@ -18,6 +18,7 @@ WeatherApp es una aplicación web moderna para consultar el clima en tiempo real
 - PHP >= 8.2
 - Node.js y npm
 - Composer
+- **API Key de [WeatherAPI](https://www.weatherapi.com/)** (obligatoria para el funcionamiento del clima)
 
 ### Pasos
 
@@ -43,6 +44,12 @@ WeatherApp es una aplicación web moderna para consultar el clima en tiempo real
 4. **Configurar variables de entorno**
 
    Copia `.env.example` a `.env` y configura tus credenciales.
+
+   > **Importante:** Debes agregar tu API Key de WeatherAPI `https://weatherapi.com/docs/` en el archivo `.env` en la variable correspondiente, por ejemplo:
+   >
+   > ```
+   > WEATHERAPI_KEY=tu_api_key_aqui
+   > ```
 
    ```sh
    cp .env.example .env
