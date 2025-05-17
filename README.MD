@@ -88,10 +88,6 @@ Una vez levantado el backend, puedes consumir la API directamente desde tus apli
   ```sh
   php artisan test
   ```
-- Ejecutar tests frontend:  
-  ```sh
-  npm run test
-  ```
 - Compilar assets para producción:  
   ```sh
   npm run build
