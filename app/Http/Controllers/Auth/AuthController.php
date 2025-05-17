@@ -9,7 +9,35 @@ use Validator;
 
 class AuthController extends Controller
 {
-    // Registro
+    /**
+     * @OA\Post(
+     *     path="/api/auth/register",
+     *     summary="Registrar un nuevo usuario",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name","email","password","password_confirmation"},
+     *             @OA\Property(property="name", type="string", example="Juan Pérez"),
+     *             @OA\Property(property="email", type="string", example="juan@email.com"),
+     *             @OA\Property(property="password", type="string", example="12345678"),
+     *             @OA\Property(property="password_confirmation", type="string", example="12345678")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=201,
+     *         description="Usuario registrado",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="access_token", type="string"),
+     *             @OA\Property(property="token_type", type="string", example="Bearer")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Datos inválidos"
+     *     )
+     * )
+     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -37,7 +65,33 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // Login
+    /**
+     * @OA\Post(
+     *     path="/api/auth/login",
+     *     summary="Iniciar sesión",
+     *     tags={"Auth"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"email","password"},
+     *             @OA\Property(property="email", type="string", example="juan@email.com"),
+     *             @OA\Property(property="password", type="string", example="12345678")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Login exitoso",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="access_token", type="string"),
+     *             @OA\Property(property="token_type", type="string", example="Bearer")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Credenciales inválidas"
+     *     )
+     * )
+     */
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -58,7 +112,21 @@ class AuthController extends Controller
         ], 200);
     }
 
-    // Logout (revoca todos los tokens actuales)
+    /**
+     * @OA\Post(
+     *     path="/api/auth/logout",
+     *     summary="Cerrar sesión (revocar tokens)",
+     *     tags={"Auth"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Tokens revocados",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Tokens revocados")
+     *         )
+     *     )
+     * )
+     */
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
@@ -66,7 +134,19 @@ class AuthController extends Controller
         return response()->json(['message' => 'Tokens revocados'], 200);
     }
 
-    // Info del usuario autenticado
+    /**
+     * @OA\Get(
+     *     path="/api/user",
+     *     summary="Obtener información del usuario autenticado",
+     *     tags={"Auth"},
+     *     security={{"sanctum":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Usuario autenticado",
+     *         @OA\JsonContent(ref="#/components/schemas/User")
+     *     )
+     * )
+     */
     public function user(Request $request)
     {
         return response()->json($request->user());
